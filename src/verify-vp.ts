@@ -39,7 +39,10 @@ function firstCredentialSubject(cred: I2H2ACredential): I2H2ACredentialSubject {
   return cs as I2H2ACredentialSubject;
 }
 
-async function verifyJsonLdVpProof(vp: VerifiablePresentation): Promise<void> {
+async function verifyJsonLdVpProof(
+  vp: VerifiablePresentation,
+  resolverUrl?: string
+): Promise<void> {
   const proof = firstProof(vp.proof);
   if (!proof?.verificationMethod) {
     throw new Error('VP must have proof object with verificationMethod');
@@ -47,12 +50,15 @@ async function verifyJsonLdVpProof(vp: VerifiablePresentation): Promise<void> {
 
   const vm = proof.verificationMethod;
   const { did: signerDid } = parseDidAndFragment(vm);
-  const agentDoc = await resolveDidDocument(signerDid);
+  const agentDoc = await resolveDidDocument(signerDid, resolverUrl);
   const jwk = findVerificationMethod(agentDoc, vm) ?? pickSigningJwk(agentDoc, signerDid, undefined);
   verifyDataIntegrityEd25519(stripProof(vp) as JsonLdObject, proof, jwk);
 }
 
-async function verifyJwtVpSignature(token: string): Promise<{ vpPayload: Record<string, unknown>; jwtPayload: jwt.JwtPayload }> {
+async function verifyJwtVpSignature(
+  token: string,
+  resolverUrl?: string
+): Promise<{ vpPayload: Record<string, unknown>; jwtPayload: jwt.JwtPayload }> {
   const decoded = jwt.decode(token, { complete: true });
   if (!decoded || typeof decoded !== 'object' || !('payload' in decoded)) {
     throw new Error('Invalid JWT VP');
@@ -65,7 +71,7 @@ async function verifyJwtVpSignature(token: string): Promise<{ vpPayload: Record<
   }
 
   const { did: issuerDid } = parseDidAndFragment(iss);
-  const issuerDoc = await resolveDidDocument(issuerDid);
+  const issuerDoc = await resolveDidDocument(issuerDid, resolverUrl);
   const kid = header.kid;
   const jwk = pickSigningJwk(issuerDoc, issuerDid, typeof kid === 'string' ? kid : undefined);
   verifyJwtWithKey(token, publicKeyFromJwk(jwk));
@@ -75,7 +81,8 @@ async function verifyJwtVpSignature(token: string): Promise<{ vpPayload: Record<
 }
 
 async function verifyI2H2ACredentialSignature(
-  raw: unknown
+  raw: unknown,
+  resolverUrl?: string
 ): Promise<{ credential: I2H2ACredential; jwtEnvelope?: jwt.JwtPayload }> {
   if (detectCredentialFormat(raw) === 'jwt') {
     const token = raw as string;
@@ -91,7 +98,7 @@ async function verifyI2H2ACredentialSignature(
     }
 
     const { did: holderDid } = parseDidAndFragment(iss);
-    const holderDoc = await resolveDidDocument(holderDid);
+    const holderDoc = await resolveDidDocument(holderDid, resolverUrl);
     const kid = header.kid;
     const jwk = pickSigningJwk(holderDoc, holderDid, typeof kid === 'string' ? kid : undefined);
     verifyJwtWithKey(token, publicKeyFromJwk(jwk));
@@ -108,7 +115,7 @@ async function verifyI2H2ACredentialSignature(
 
   const issuerDid = extractIssuerDid(cred);
   const { did: issuerBase } = parseDidAndFragment(issuerDid);
-  const issuerDoc = await resolveDidDocument(issuerBase);
+  const issuerDoc = await resolveDidDocument(issuerBase, resolverUrl);
   const jwk = findVerificationMethod(issuerDoc, proof.verificationMethod);
   if (!jwk) {
     throw new Error('Could not resolve issuer verification method for credential');
@@ -173,7 +180,7 @@ export async function verifyI2H2AVP(
 
   if (isJwtPresentation(vpInput)) {
     try {
-      const { vpPayload: inner } = await verifyJwtVpSignature(vpInput);
+      const { vpPayload: inner } = await verifyJwtVpSignature(vpInput, options?.resolverUrl);
       vpPayload = inner;
     } catch {
       return { valid: false, error: 'VP signature verification failed' };
@@ -201,7 +208,7 @@ export async function verifyI2H2AVP(
     }
 
     try {
-      await verifyJsonLdVpProof(vp);
+      await verifyJsonLdVpProof(vp, options?.resolverUrl);
     } catch {
       return { valid: false, error: 'VP signature verification failed' };
     }
@@ -230,7 +237,7 @@ export async function verifyI2H2AVP(
   let credJwtEnv: jwt.JwtPayload | undefined;
 
   try {
-    const out = await verifyI2H2ACredentialSignature(rawI2H2A);
+    const out = await verifyI2H2ACredentialSignature(rawI2H2A, options?.resolverUrl);
     credential = out.credential;
     credJwtEnv = out.jwtEnvelope;
   } catch (e) {

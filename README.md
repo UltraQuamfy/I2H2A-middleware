@@ -44,13 +44,17 @@ Checks credential status against the status list referenced in `credentialStatus
 
 ## DID resolution
 
-`did:key` is resolved locally per the [did:key method spec](https://w3c-ccg.github.io/did-method-key/). All other DID methods are resolved via a configurable W3C Universal Resolver endpoint:
+`did:key` is resolved locally per the [did:key method spec](https://w3c-ccg.github.io/did-method-key/). All other DID methods including `did:cheqd`, `did:web`, and any W3C-compliant method are resolved via a [W3C Universal Resolver](https://dev.uniresolver.io) endpoint.
 
-```bash
-I2H2A_UNIVERSAL_RESOLVER_URL=https://dev.uniresolver.io
+The resolver URL defaults to `https://dev.uniresolver.io/1.0/identifiers/`. To use a different resolver, pass `resolverUrl` in the options:
+
+```typescript
+const result = await verifyI2H2AVP(vp, {
+  mcpServerId: 'your-mcp-server-id',
+  taskType: 'read-only',
+  resolverUrl: 'https://your-resolver.example.com/1.0/identifiers/',
+});
 ```
-
-If `I2H2A_UNIVERSAL_RESOLVER_URL` is not set, resolution of non-`did:key` DIDs will fail with a descriptive error.
 
 ## I2H2A specification
 

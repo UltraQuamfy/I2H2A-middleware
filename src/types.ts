@@ -202,4 +202,5 @@ export interface VerifyOptions {
   mcpServerId?: string;
   taskType?: string;
   skipStatusCheck?: boolean;
+  resolverUrl?: string;
 }

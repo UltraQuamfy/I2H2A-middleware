@@ -88,8 +88,7 @@ function resolveDidKeyLocally(did: string): DIDDocument {
 }
 
 /** Default public universal resolver (HTTP binding); override in tests or production. */
-const DEFAULT_UNIVERSAL_RESOLVER =
-  process.env.I2H2A_UNIVERSAL_RESOLVER_URL ?? 'https://dev.uniresolver.io/1.0/identifiers/';
+const DEFAULT_UNIVERSAL_RESOLVER = 'https://dev.uniresolver.io/1.0/identifiers/';
 
 export interface UniversalResolverResponse {
   didDocument?: DidResolverDocument;
@@ -97,8 +96,11 @@ export interface UniversalResolverResponse {
   didDocumentMetadata?: Record<string, unknown>;
 }
 
-async function resolveViaUniversalBinding(did: string): Promise<DidResolverDocument> {
-  const url = `${DEFAULT_UNIVERSAL_RESOLVER}${encodeURIComponent(did)}`;
+async function resolveViaUniversalBinding(
+  did: string,
+  resolverUrl?: string
+): Promise<DidResolverDocument> {
+  const url = `${resolverUrl ?? DEFAULT_UNIVERSAL_RESOLVER}${encodeURIComponent(did)}`;
   const res = await fetch(url, {
     headers: { Accept: 'application/did+json,application/json' },
   });
@@ -115,57 +117,6 @@ async function resolveViaUniversalBinding(did: string): Promise<DidResolverDocum
   return body.didDocument;
 }
 
-/** cheqd hosted driver; works for testnet and mainnet DIDs. */
-const CHEQD_RESOLVER_BASE = 'https://resolver.cheqd.net/1.0/identifiers/';
-
-/**
- * TODO: Remove this cheqd-specific resolver before v1.0
- *
- * This is a temporary convenience feature while universal resolvers
- * don't properly support did:cheqd. For true platform-agnosticism,
- * all DID methods (except did:key which is self-resolving) should
- * use a configurable universal resolver endpoint.
- *
- * Options for v1.0:
- * - Remove this and rely on universal resolver
- * - Make resolver endpoint configurable via env var
- * - Implement plugin architecture for custom resolvers
- */
-async function resolveCheqdDidDirectly(did: string): Promise<DIDDocument> {
-  const url = `${CHEQD_RESOLVER_BASE}${encodeURIComponent(did)}`;
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/did+ld+json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`cheqd resolver returned ${response.status}: ${await response.text()}`);
-  }
-
-  const result = (await response.json()) as unknown;
-  if (!result || typeof result !== 'object') {
-    throw new Error('cheqd resolver returned invalid JSON');
-  }
-
-  const rec = result as Record<string, unknown>;
-  // Universal-resolver shape
-  if (rec.didDocument && typeof rec.didDocument === 'object') {
-    return rec.didDocument as DIDDocument;
-  }
-  // cheqd driver returns the DID document as the root JSON-LD object
-  if (
-    typeof rec.id === 'string' &&
-    rec.id.startsWith('did:') &&
-    Array.isArray(rec.verificationMethod)
-  ) {
-    return result as DIDDocument;
-  }
-
-  throw new Error('cheqd resolver returned no usable DID document');
-}
-
 /**
  * Method-specific resolvers delegate to the HTTP universal resolver (did:web only).
  */
@@ -179,7 +130,10 @@ function createUniversalDidResolver(): DIDResolver {
     void parsed;
     void resolver;
     void options;
-    const didDocument = await resolveViaUniversalBinding(did);
+    const didDocument = await resolveViaUniversalBinding(
+      did,
+      (options as DIDResolutionOptions & { resolverUrl?: string }).resolverUrl
+    );
     return {
       didDocument,
       didDocumentMetadata: {},
@@ -190,13 +144,14 @@ function createUniversalDidResolver(): DIDResolver {
 
 const resolver = new Resolver({
   web: createUniversalDidResolver(),
+  cheqd: createUniversalDidResolver(),
 });
 
 /**
  * Resolve a DID to its DID document (verification methods, etc.).
  * did:key is resolved locally; did:cheqd uses resolver.cheqd.net; did:web uses the universal resolver.
  */
-export async function resolveDidDocument(did: string): Promise<DIDDocument> {
+export async function resolveDidDocument(did: string, resolverUrl?: string): Promise<DIDDocument> {
   if (!did || typeof did !== 'string' || !did.startsWith('did:')) {
     throw new Error(`Invalid DID: ${did}`);
   }
@@ -208,22 +163,20 @@ export async function resolveDidDocument(did: string): Promise<DIDDocument> {
     return resolveDidKeyLocally(didWithoutFragment);
   }
 
-  if (didWithoutFragment.startsWith('did:cheqd:')) {
-    return resolveCheqdDidDirectly(didWithoutFragment);
-  }
-
   const method = didWithoutFragment.split(':')[1];
 
   if (!method) {
     throw new Error(`Invalid DID (no method): ${did}`);
   }
 
-  const supported = new Set(['web']);
+  const supported = new Set(['web', 'cheqd']);
   if (!supported.has(method)) {
     throw new Error(`Unsupported DID method for resolver: ${method}`);
   }
 
-  const result = await resolver.resolve(didWithoutFragment);
+  const result = await resolver.resolve(didWithoutFragment, {
+    resolverUrl,
+  } as DIDResolutionOptions & { resolverUrl?: string });
   const doc = result.didDocument;
 
   if (!doc) {

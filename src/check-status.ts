@@ -8,7 +8,6 @@ function firstStatus(cs: I2H2ACredential['credentialStatus']): CredentialStatus 
 
 /**
  * Fetch a status list credential (JSON) and test the bit at `statusListIndex`.
- * Stub: assumes bitstring payload compatible with checking index (implementation to be hardened).
  */
 export async function checkCredentialStatus(credential: I2H2ACredential): Promise<boolean> {
   const status = firstStatus(credential.credentialStatus);
