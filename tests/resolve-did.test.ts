@@ -53,9 +53,27 @@ describe('resolveDidDocument', () => {
     await expect(resolveDidDocument(did)).rejects.toThrow();
   });
 
-  it('throws for an unsupported DID method (did:example)', async () => {
-    await expect(resolveDidDocument('did:example:abc')).rejects.toThrow(
-      'Unsupported DID method for resolver: example'
+  it('resolves did:example via universal resolver when mocked', async () => {
+    const exampleDid = 'did:example:123';
+    const expected = {
+      id: exampleDid,
+      verificationMethod: [
+        {
+          id: `${exampleDid}#key-1`,
+          type: 'JsonWebKey2020',
+          controller: exampleDid,
+          publicKeyJwk: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' },
+        },
+      ],
+    };
+    mockResolverJson(true, 200, { didDocument: expected });
+
+    const doc = await resolveDidDocument(exampleDid);
+
+    expect(doc).toEqual(expected);
+    expect(mockedFetch).toHaveBeenCalledWith(
+      'https://dev.uniresolver.io/1.0/identifiers/did%3Aexample%3A123',
+      { headers: { Accept: 'application/did+json,application/json' } }
     );
   });
 
@@ -95,30 +113,6 @@ describe('resolveDidDocument', () => {
     expect(doc).toEqual(expected);
     expect(mockedFetch).toHaveBeenCalledWith(
       'https://dev.uniresolver.io/1.0/identifiers/did%3Aweb%3Aexample.com',
-      { headers: { Accept: 'application/did+json,application/json' } }
-    );
-  });
-
-  it('resolves did:cheqd via universal resolver and returns didDocument', async () => {
-    const cheqdDid = 'did:cheqd:testnet:abc-123';
-    const expected = {
-      id: cheqdDid,
-      verificationMethod: [
-        {
-          id: `${cheqdDid}#key-1`,
-          type: 'JsonWebKey2020',
-          controller: cheqdDid,
-          publicKeyJwk: { kty: 'EC', crv: 'P-256', x: 'abc' },
-        },
-      ],
-    };
-    mockResolverJson(true, 200, { didDocument: expected });
-
-    const doc = await resolveDidDocument(cheqdDid);
-
-    expect(doc).toEqual(expected);
-    expect(mockedFetch).toHaveBeenCalledWith(
-      'https://dev.uniresolver.io/1.0/identifiers/did%3Acheqd%3Atestnet%3Aabc-123',
       { headers: { Accept: 'application/did+json,application/json' } }
     );
   });

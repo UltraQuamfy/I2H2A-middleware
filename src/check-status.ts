@@ -27,8 +27,6 @@ async function decodeBitstringBytes(encoded: string): Promise<Buffer> {
 /**
  * Fetch a status list credential (JSON) and test the bit at `statusListIndex`.
  */
-// TODO: cheqd testnet credentialStatus policy check consistently returns false regardless of credential state.
-// For testnet, this check is bypassed at the verify-vp level via skipStatusCheck. This function is correct for mainnet.
 export async function checkCredentialStatus(status: CredentialStatusEntry): Promise<boolean> {
   const listUrl = status.statusListCredential;
   if (!listUrl || typeof listUrl !== 'string') {

@@ -56,13 +56,13 @@ Verifies an SD-JWT+KB presentation containing an I2H2A credential.
 5. Verify KB-JWT ES256 signature against `cnf.jwk` (agent P-256 public key)
 6. Verify KB-JWT `aud`, `nonce`, and `sd_hash` binding
 7. Check temporal validity (`nbf`, `exp`)
-8. Check Bitstring Status List revocation status on cheqd
+8. Check Bitstring Status List revocation status (credential status URLs from the VC)
 9. Enforce delegation scope (`scope.mcpServers`, `scope.taskType`)
 10. Assert `delegationDepth === 0` and `parentCredential === null`
 
 ### `resolveDidDocument(did, resolverUrl?)`
 
-Resolves a DID to a DID document. `did:key` is resolved locally. `did:cheqd` is resolved via the cheqd native resolver. All other DID methods are resolved via the W3C Universal Resolver endpoint (default: `https://dev.uniresolver.io/1.0/identifiers/`).
+Resolves a DID to a DID document. `did:key` is resolved locally. All other methods are resolved via the W3C Universal Resolver endpoint (default: `https://dev.uniresolver.io/1.0/identifiers/`), subject to what your chosen resolver deployment supports.
 
 ### `checkCredentialStatus(credentialStatus)`
 
@@ -71,8 +71,7 @@ Checks Bitstring Status List revocation status for the given `credentialStatus` 
 ## DID resolution
 
 - `did:key` — resolved locally, no network call
-- `did:cheqd` — resolved via cheqd native resolver
-- All other methods — resolved via configurable W3C Universal Resolver endpoint
+- All other methods — resolved via configurable W3C Universal Resolver endpoint (informative example: a public dev instance may use `https://dev.uniresolver.io/1.0/identifiers/` as the base URL)
 
 ## Credential format
 

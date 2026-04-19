@@ -207,7 +207,7 @@ async function resolveViaUniversalResolver(did: string, resolverUrl?: string): P
 
 /**
  * Resolve a DID to its DID document (verification methods, etc.).
- * did:key is resolved locally; did:web and did:cheqd are resolved via universal resolver HTTP API.
+ * did:key is resolved locally; all other methods use the W3C Universal Resolver HTTP API (configurable base URL).
  */
 export async function resolveDidDocument(did: string, resolverUrl?: string): Promise<DIDDocument> {
   if (!did || typeof did !== 'string' || !did.startsWith('did:')) {
@@ -227,9 +227,5 @@ export async function resolveDidDocument(did: string, resolverUrl?: string): Pro
     throw new Error(`Invalid DID (no method): ${did}`);
   }
 
-  if (method === 'web' || method === 'cheqd') {
-    return resolveViaUniversalResolver(didWithoutFragment, resolverUrl);
-  }
-
-  throw new Error(`Unsupported DID method for resolver: ${method}`);
+  return resolveViaUniversalResolver(didWithoutFragment, resolverUrl);
 }
