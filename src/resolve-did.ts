@@ -5,7 +5,6 @@ const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvw
 const P256_MULTICODEC_PREFIX_0 = 0x80;
 const P256_MULTICODEC_PREFIX_1 = 0x24;
 const P256_COMPRESSED_POINT_LENGTH = 33;
-const UNIVERSAL_RESOLVER_DEFAULT_URL = 'https://dev.uniresolver.io/1.0/identifiers/';
 
 // NIST P-256 field parameters
 const P256_P = BigInt('0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff');
@@ -187,7 +186,8 @@ function toUniversalResolverUrl(base: string, did: string): string {
 }
 
 async function resolveViaUniversalResolver(did: string, resolverUrl?: string): Promise<DIDDocument> {
-  const base = resolverUrl ?? UNIVERSAL_RESOLVER_DEFAULT_URL;
+  const base = resolverUrl;
+  if (!base) throw new Error('resolverUrl is required for non-did:key DID resolution');
   const url = toUniversalResolverUrl(base, did);
   const res = await fetch(url, {
     headers: { Accept: 'application/did+json,application/json' },
@@ -207,7 +207,8 @@ async function resolveViaUniversalResolver(did: string, resolverUrl?: string): P
 
 /**
  * Resolve a DID to its DID document (verification methods, etc.).
- * did:key is resolved locally; all other methods use the W3C Universal Resolver HTTP API (configurable base URL).
+ * did:key is resolved locally; all other methods use the W3C Universal Resolver HTTP API.
+ * resolverUrl is required when resolving non-did:key DIDs.
  */
 export async function resolveDidDocument(did: string, resolverUrl?: string): Promise<DIDDocument> {
   if (!did || typeof did !== 'string' || !did.startsWith('did:')) {

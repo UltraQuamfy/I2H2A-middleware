@@ -161,7 +161,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(true);
@@ -178,7 +177,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId: 'different-server',
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -190,7 +188,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -203,7 +200,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: false,
     });
 
     expect(res.valid).toBe(false);
@@ -216,7 +212,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -228,7 +223,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -240,7 +234,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -252,7 +245,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -264,7 +256,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);
@@ -276,7 +267,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(true);
@@ -288,7 +278,6 @@ describe('integration (mocked resolver and status)', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
 
     expect(res.valid).toBe(false);

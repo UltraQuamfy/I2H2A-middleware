@@ -133,7 +133,6 @@ describe('verifyI2H2APresentation', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
     expect(res.valid).toBe(true);
     expect(res.claims?.agentDid).toBe('did:key:test-agent');
@@ -144,7 +143,6 @@ describe('verifyI2H2APresentation', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
     expect(res.valid).toBe(false);
     expect(res.error).toBe('Delegation scope does not permit this MCP server');
@@ -156,7 +154,6 @@ describe('verifyI2H2APresentation', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: false,
     });
     expect(res.valid).toBe(false);
     expect(res.error).toBe('Credential revoked');
@@ -167,7 +164,6 @@ describe('verifyI2H2APresentation', () => {
     const res = await verifyI2H2APresentation(token, {
       mcpServerId,
       nonce,
-      skipStatusCheck: true,
     });
     expect(res.valid).toBe(false);
     expect(res.error).toBe('delegatedBy is required');

@@ -34,8 +34,10 @@ export function verifyEs256Signature(token: string, jwk: P256Jwk): boolean {
   try {
     const derSig = rawEcdsaToDer(sigBytes);
     return crypto.verify('SHA256', signingInput, publicKey, derSig);
-  } catch {
-    return false;
+  } catch (err) {
+    throw new Error(
+      `ES256 signature verification failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 

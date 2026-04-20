@@ -98,8 +98,6 @@ export interface VerifyOptions {
   mcpServerId: string;
   /** Challenge nonce — must match nonce in KB-JWT. */
   nonce: string;
-  /** Skip Bitstring Status List revocation check (useful for testing). */
-  skipStatusCheck?: boolean;
-  /** Override DID resolver URL (default: https://dev.uniresolver.io/1.0/identifiers/). */
+  /** DID resolver URL (required when issuer DID is not did:key). */
   resolverUrl?: string;
 }

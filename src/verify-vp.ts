@@ -158,7 +158,7 @@ export async function verifyI2H2APresentation(
     return { valid: false, error: 'KB-JWT signature invalid' };
   }
 
-  if (!options.skipStatusCheck && issuerPayload.credentialStatus) {
+  if (issuerPayload.credentialStatus) {
     try {
       const isActive = await checkCredentialStatus(issuerPayload.credentialStatus);
       if (!isActive) {

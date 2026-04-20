@@ -68,7 +68,7 @@ describe('resolveDidDocument', () => {
     };
     mockResolverJson(true, 200, { didDocument: expected });
 
-    const doc = await resolveDidDocument(exampleDid);
+    const doc = await resolveDidDocument(exampleDid, 'https://dev.uniresolver.io/1.0/identifiers/');
 
     expect(doc).toEqual(expected);
     expect(mockedFetch).toHaveBeenCalledWith(
@@ -80,7 +80,9 @@ describe('resolveDidDocument', () => {
   it('throws when universal resolver returns non-200 for did:web', async () => {
     mockResolverJson(false, 503, {});
 
-    await expect(resolveDidDocument('did:web:example.com')).rejects.toThrow(
+    await expect(
+      resolveDidDocument('did:web:example.com', 'https://dev.uniresolver.io/1.0/identifiers/')
+    ).rejects.toThrow(
       'DID resolution failed (503): did:web:example.com'
     );
   });
@@ -88,7 +90,9 @@ describe('resolveDidDocument', () => {
   it('throws when universal resolver returns no didDocument for did:web', async () => {
     mockResolverJson(true, 200, { didResolutionMetadata: {} });
 
-    await expect(resolveDidDocument('did:web:example.com')).rejects.toThrow(
+    await expect(
+      resolveDidDocument('did:web:example.com', 'https://dev.uniresolver.io/1.0/identifiers/')
+    ).rejects.toThrow(
       'DID resolution returned no didDocument for did:web:example.com'
     );
   });
@@ -108,7 +112,7 @@ describe('resolveDidDocument', () => {
     };
     mockResolverJson(true, 200, { didDocument: expected });
 
-    const doc = await resolveDidDocument(webDid);
+    const doc = await resolveDidDocument(webDid, 'https://dev.uniresolver.io/1.0/identifiers/');
 
     expect(doc).toEqual(expected);
     expect(mockedFetch).toHaveBeenCalledWith(
