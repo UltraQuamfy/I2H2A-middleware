@@ -53,8 +53,20 @@ export async function checkCredentialStatus(status: CredentialStatusEntry): Prom
   if (!encoded || typeof encoded !== 'string') {
     throw new Error('Status list document missing encodedList');
   }
+  const MAX_ENCODED_SIZE = 10 * 1024 * 1024; // 10MB
+  if (encoded.length > MAX_ENCODED_SIZE) {
+    throw new Error(
+      `Status list encodedList too large (${encoded.length} bytes, max ${MAX_ENCODED_SIZE})`
+    );
+  }
 
   const buf = await decodeBitstringBytes(encoded);
+  const MAX_DECOMPRESSED_SIZE = 50 * 1024 * 1024; // 50MB decompressed
+  if (buf.length > MAX_DECOMPRESSED_SIZE) {
+    throw new Error(
+      `Status list too large after decompression (${buf.length} bytes, max ${MAX_DECOMPRESSED_SIZE})`
+    );
+  }
   const byteIndex = Math.floor(index / 8);
   const bitPos = index % 8;
 

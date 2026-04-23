@@ -5,9 +5,17 @@ export function validateDelegationScope(
   mcpServerId: string
 ): boolean {
   const allowedServers = claims['scope.mcpServers'];
+
   if (!Array.isArray(allowedServers) || allowedServers.length === 0) {
     return false;
   }
 
-  return allowedServers.includes(mcpServerId);
+  for (const server of allowedServers) {
+    if (typeof server !== 'string' || server.trim() === '') {
+      return false;
+    }
+  }
+
+  const normalizedId = mcpServerId.trim();
+  return allowedServers.some((s) => s.trim() === normalizedId);
 }

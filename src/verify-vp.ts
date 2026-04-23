@@ -67,8 +67,16 @@ export async function verifyI2H2APresentation(
   let issuerDidDoc;
   try {
     issuerDidDoc = await resolveDidDocument(issuerPayload.iss, options.resolverUrl);
-  } catch {
-    return { valid: false, error: 'Issuer DID resolution failed' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const didMethod = issuerPayload.iss.split(':')[1];
+    if (didMethod !== 'key' && !options.resolverUrl) {
+      return {
+        valid: false,
+        error: `Issuer DID resolution failed: resolverUrl required for did:${didMethod}`,
+      };
+    }
+    return { valid: false, error: `Issuer DID resolution failed: ${msg}` };
   }
 
   let issuerJwk: P256Jwk | null = null;
@@ -90,8 +98,13 @@ export async function verifyI2H2APresentation(
     return { valid: false, error: 'No P-256 key in issuer DID document' };
   }
 
-  if (!verifyEs256Signature(issuerJwt, issuerJwk)) {
-    return { valid: false, error: 'Issuer JWT signature invalid' };
+  try {
+    if (!verifyEs256Signature(issuerJwt, issuerJwk)) {
+      return { valid: false, error: 'Issuer JWT signature invalid' };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { valid: false, error: `Issuer signature verification error: ${msg}` };
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -100,6 +113,14 @@ export async function verifyI2H2APresentation(
   }
   if (issuerPayload.exp <= now) {
     return { valid: false, error: 'Issuer JWT expired' };
+  }
+
+  const disclosureSet = new Set<string>();
+  for (const disclosure of disclosures) {
+    if (disclosureSet.has(disclosure)) {
+      return { valid: false, error: 'Duplicate disclosure detected' };
+    }
+    disclosureSet.add(disclosure);
   }
 
   for (const disclosure of disclosures) {
@@ -132,6 +153,14 @@ export async function verifyI2H2APresentation(
   if (!kbParts) {
     return { valid: false, error: 'Invalid KB-JWT' };
   }
+  const kbHeader = decodeJwtPart(kbParts[0]);
+  if (kbHeader == null || typeof kbHeader !== 'object') {
+    return { valid: false, error: 'Invalid KB-JWT header' };
+  }
+  const kbHeaderTyped = kbHeader as { alg?: string; typ?: string };
+  if (kbHeaderTyped.alg !== 'ES256') {
+    return { valid: false, error: 'KB-JWT must use ES256 algorithm' };
+  }
   const [, kbPayloadB64] = kbParts;
   const kbPayload = decodeJwtPart(kbPayloadB64) as KbJwtPayload;
   if (!safeEqualString(kbPayload.aud, options.mcpServerId)) {
@@ -154,8 +183,13 @@ export async function verifyI2H2APresentation(
   ) {
     return { valid: false, error: 'Invalid holder key in cnf.jwk' };
   }
-  if (!verifyEs256Signature(kbJwt, holderJwk)) {
-    return { valid: false, error: 'KB-JWT signature invalid' };
+  try {
+    if (!verifyEs256Signature(kbJwt, holderJwk)) {
+      return { valid: false, error: 'KB-JWT signature invalid' };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { valid: false, error: `KB-JWT signature verification error: ${msg}` };
   }
 
   if (issuerPayload.credentialStatus) {

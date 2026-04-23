@@ -83,7 +83,7 @@ describe('resolveDidDocument', () => {
     await expect(
       resolveDidDocument('did:web:example.com', 'https://dev.uniresolver.io/1.0/identifiers/')
     ).rejects.toThrow(
-      'DID resolution failed (503): did:web:example.com'
+      'DID resolution HTTP 503 from https://dev.uniresolver.io/1.0/identifiers/: did:web:example.com'
     );
   });
 
@@ -93,7 +93,7 @@ describe('resolveDidDocument', () => {
     await expect(
       resolveDidDocument('did:web:example.com', 'https://dev.uniresolver.io/1.0/identifiers/')
     ).rejects.toThrow(
-      'DID resolution returned no didDocument for did:web:example.com'
+      'DID resolver returned no didDocument for did:web:example.com (resolver: https://dev.uniresolver.io/1.0/identifiers/)'
     );
   });
 

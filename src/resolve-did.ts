@@ -187,19 +187,29 @@ function toUniversalResolverUrl(base: string, did: string): string {
 
 async function resolveViaUniversalResolver(did: string, resolverUrl?: string): Promise<DIDDocument> {
   const base = resolverUrl;
-  if (!base) throw new Error('resolverUrl is required for non-did:key DID resolution');
+  if (!base) {
+    const method = did.split(':')[1] || 'unknown';
+    throw new Error(`resolverUrl is required for did:${method} resolution`);
+  }
+
   const url = toUniversalResolverUrl(base, did);
-  const res = await fetch(url, {
-    headers: { Accept: 'application/did+json,application/json' },
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      headers: { Accept: 'application/did+json,application/json' },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`DID resolver network error (${base}): ${msg}`);
+  }
 
   if (!res.ok) {
-    throw new Error(`DID resolution failed (${res.status}): ${did}`);
+    throw new Error(`DID resolution HTTP ${res.status} from ${base}: ${did}`);
   }
 
   const body = (await res.json()) as UniversalResolverResponse;
   if (!body.didDocument || typeof body.didDocument !== 'object') {
-    throw new Error(`DID resolution returned no didDocument for ${did}`);
+    throw new Error(`DID resolver returned no didDocument for ${did} (resolver: ${base})`);
   }
 
   return body.didDocument;
@@ -210,6 +220,9 @@ async function resolveViaUniversalResolver(did: string, resolverUrl?: string): P
  * did:key is resolved locally; all other methods use the W3C Universal Resolver HTTP API.
  * resolverUrl is required when resolving non-did:key DIDs.
  */
+export function resolveDidDocument(did: `did:key:${string}`): Promise<DIDDocument>;
+export function resolveDidDocument(did: string, resolverUrl: string): Promise<DIDDocument>;
+export function resolveDidDocument(did: string, resolverUrl?: string): Promise<DIDDocument>;
 export async function resolveDidDocument(did: string, resolverUrl?: string): Promise<DIDDocument> {
   if (!did || typeof did !== 'string' || !did.startsWith('did:')) {
     throw new Error(`Invalid DID: ${did}`);
