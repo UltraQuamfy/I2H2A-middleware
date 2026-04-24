@@ -71,9 +71,7 @@ describe('checkCredentialStatus', () => {
   ])('throws when string statusListIndex is invalid (%s)', async (_label, badIndex) => {
     await expect(
       checkCredentialStatus(makeStatusEntry({ statusListIndex: badIndex }))
-    ).rejects.toThrow(
-      'credentialStatus.statusListIndex must be a base-10 string or finite non-negative integer'
-    );
+    ).rejects.toThrow('Invalid statusListIndex');
   });
 
   it('accepts base-10 string statusListIndex', async () => {

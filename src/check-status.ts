@@ -63,6 +63,7 @@ export async function checkCredentialStatus(status: CredentialStatusEntry): Prom
   }
 
   const statusListIndex = status.statusListIndex;
+  if (!/^[0-9]+$/.test(statusListIndex)) throw new Error('Invalid statusListIndex');
   const index = parseInt(statusListIndex, 10);
   if (isNaN(index) || index < 0) throw new Error('Invalid statusListIndex');
 

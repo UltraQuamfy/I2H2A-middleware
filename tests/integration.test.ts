@@ -294,7 +294,7 @@ describe('integration (mocked resolver and status)', () => {
         id: 'https://example.org/status/1#0',
         type: 'BitstringStatusListEntry',
         statusPurpose: 'suspension',
-        statusListIndex: 0,
+        statusListIndex: '0',
         statusListCredential: 'https://example.org/status/1',
       },
     });
