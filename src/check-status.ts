@@ -24,6 +24,27 @@ async function decodeBitstringBytes(encoded: string): Promise<Buffer> {
   return raw;
 }
 
+function parseStatusListIndex(index: number | string): number {
+  if (typeof index === 'number') {
+    if (!Number.isFinite(index) || index < 0 || !Number.isInteger(index)) {
+      throw new Error('credentialStatus.statusListIndex must be a finite non-negative integer');
+    }
+    return index;
+  }
+
+  if (typeof index !== 'string' || !/^[0-9]+$/.test(index)) {
+    throw new Error(
+      'credentialStatus.statusListIndex must be a base-10 string or finite non-negative integer'
+    );
+  }
+
+  const parsed = Number.parseInt(index, 10);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new Error('credentialStatus.statusListIndex exceeds supported integer range');
+  }
+  return parsed;
+}
+
 /**
  * Fetch a status list credential (JSON) and test the bit at `statusListIndex`.
  */
@@ -33,10 +54,7 @@ export async function checkCredentialStatus(status: CredentialStatusEntry): Prom
     throw new Error('credentialStatus.statusListCredential URL is required');
   }
 
-  const index = status.statusListIndex;
-  if (!Number.isFinite(index) || index < 0 || !Number.isInteger(index)) {
-    throw new Error('credentialStatus.statusListIndex must be a finite non-negative integer');
-  }
+  const index = parseStatusListIndex(status.statusListIndex);
 
   const res = await fetch(listUrl, { headers: { Accept: 'application/json' } });
   if (!res.ok) {

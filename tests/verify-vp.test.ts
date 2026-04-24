@@ -77,6 +77,8 @@ describe('verifyI2H2APresentation', () => {
     delegationDepth?: number;
     parentCredential?: string | null;
     status?: CredentialStatusEntry;
+    issuerTyp?: string;
+    kbTyp?: string;
   }): string {
     const now = Math.floor(Date.now() / 1000);
     const disclosures = [
@@ -116,7 +118,11 @@ describe('verifyI2H2APresentation', () => {
       _sd: disclosures.map(disclosureHash),
     };
 
-    const issuerJwt = signEs256Jwt({ alg: 'ES256', typ: 'JWT' }, issuerPayload, issuerKeys.privateKey);
+    const issuerJwt = signEs256Jwt(
+      { alg: 'ES256', typ: opts?.issuerTyp ?? 'vc+sd-jwt' },
+      issuerPayload,
+      issuerKeys.privateKey
+    );
     const sdInput = `${issuerJwt}~${disclosures.join('~')}~`;
     const kbPayload = {
       iat: now,
@@ -124,7 +130,11 @@ describe('verifyI2H2APresentation', () => {
       nonce,
       sd_hash: crypto.createHash('sha256').update(sdInput, 'utf8').digest('base64url'),
     };
-    const kbJwt = signEs256Jwt({ alg: 'ES256', typ: 'JWT' }, kbPayload, holderKeys.privateKey);
+    const kbJwt = signEs256Jwt(
+      { alg: 'ES256', typ: opts?.kbTyp ?? 'kb+jwt' },
+      kbPayload,
+      holderKeys.privateKey
+    );
     return `${sdInput}${kbJwt}`;
   }
 
@@ -167,5 +177,25 @@ describe('verifyI2H2APresentation', () => {
     });
     expect(res.valid).toBe(false);
     expect(res.error).toBe('delegatedBy is required');
+  });
+
+  it('rejects unsupported issuer JWT typ', async () => {
+    const token = buildToken({ issuerTyp: 'JWT' });
+    const res = await verifyI2H2APresentation(token, {
+      serverId,
+      nonce,
+    });
+    expect(res.valid).toBe(false);
+    expect(res.error).toBe('Issuer JWT typ must be vc+sd-jwt or dc+sd-jwt');
+  });
+
+  it('rejects unsupported KB-JWT typ', async () => {
+    const token = buildToken({ kbTyp: 'JWT' });
+    const res = await verifyI2H2APresentation(token, {
+      serverId,
+      nonce,
+    });
+    expect(res.valid).toBe(false);
+    expect(res.error).toBe('KB-JWT typ must be kb+jwt');
   });
 });

@@ -33,6 +33,18 @@ export async function verifyI2H2APresentation(
   token: string,
   options: VerifyOptions
 ): Promise<VerificationResult> {
+  if (typeof token !== 'string' || token.trim() === '') {
+    return { valid: false, error: 'Presentation token is required' };
+  }
+
+  if (!options || typeof options !== 'object') {
+    return { valid: false, error: 'Verification options are required' };
+  }
+
+  if (typeof options.nonce !== 'string' || options.nonce.trim() === '') {
+    return { valid: false, error: 'Verifier nonce is required' };
+  }
+
   let issuerJwt: string;
   let disclosures: string[];
   let kbJwt: string;
@@ -53,6 +65,13 @@ export async function verifyI2H2APresentation(
   const issuerHeader = decodeJwtPart(issuerHeaderB64);
   if (issuerHeader == null || typeof issuerHeader !== 'object') {
     return { valid: false, error: 'Invalid issuer JWT header' };
+  }
+  const issuerHeaderTyped = issuerHeader as { alg?: string; typ?: string };
+  if (issuerHeaderTyped.alg !== 'ES256') {
+    return { valid: false, error: 'Issuer JWT must use ES256 algorithm' };
+  }
+  if (issuerHeaderTyped.typ !== 'vc+sd-jwt' && issuerHeaderTyped.typ !== 'dc+sd-jwt') {
+    return { valid: false, error: 'Issuer JWT typ must be vc+sd-jwt or dc+sd-jwt' };
   }
   const issuerPayload = decodeJwtPart(issuerPayloadB64) as I2H2AIssuerPayload;
 
@@ -161,6 +180,9 @@ export async function verifyI2H2APresentation(
   if (kbHeaderTyped.alg !== 'ES256') {
     return { valid: false, error: 'KB-JWT must use ES256 algorithm' };
   }
+  if (kbHeaderTyped.typ !== 'kb+jwt') {
+    return { valid: false, error: 'KB-JWT typ must be kb+jwt' };
+  }
   const [, kbPayloadB64] = kbParts;
   const kbPayload = decodeJwtPart(kbPayloadB64) as KbJwtPayload;
   // Prefer serverId; support mcpServerId for backward compatibility.
@@ -198,6 +220,15 @@ export async function verifyI2H2APresentation(
   }
 
   if (issuerPayload.credentialStatus) {
+    if (
+      issuerPayload.credentialStatus.statusPurpose != null &&
+      issuerPayload.credentialStatus.statusPurpose !== 'revocation'
+    ) {
+      return {
+        valid: false,
+        error: 'credentialStatus.statusPurpose must be revocation when present',
+      };
+    }
     try {
       const isActive = await checkCredentialStatus(issuerPayload.credentialStatus);
       if (!isActive) {

@@ -15,7 +15,10 @@ export interface CnfJwk {
 export interface CredentialStatusEntry {
   id: string;
   type: 'BitstringStatusListEntry';
-  statusListIndex: number;
+  /** Accepts W3C base-10 string and legacy numeric index. */
+  statusListIndex: number | string;
+  /** Optional in core profile; required by UCP profile. */
+  statusPurpose?: string;
   statusListCredential: string;
 }
 

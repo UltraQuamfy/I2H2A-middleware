@@ -59,11 +59,27 @@ describe('checkCredentialStatus', () => {
   it.each([
     ['negative', -1],
     ['NaN', Number.NaN],
-    ['non-numeric string', 'abc'],
-  ])('throws when statusListIndex is invalid (%s)', async (_label, badIndex) => {
+  ])('throws when numeric statusListIndex is invalid (%s)', async (_label, badIndex) => {
     await expect(
       checkCredentialStatus(makeStatusEntry({ statusListIndex: badIndex as number }))
     ).rejects.toThrow('credentialStatus.statusListIndex must be a finite non-negative integer');
+  });
+
+  it.each([
+    ['non-numeric string', 'abc'],
+    ['decimal string', '1.2'],
+  ])('throws when string statusListIndex is invalid (%s)', async (_label, badIndex) => {
+    await expect(
+      checkCredentialStatus(makeStatusEntry({ statusListIndex: badIndex }))
+    ).rejects.toThrow(
+      'credentialStatus.statusListIndex must be a base-10 string or finite non-negative integer'
+    );
+  });
+
+  it('accepts base-10 string statusListIndex', async () => {
+    mockFetchJson(true, 200, { credentialSubject: { encodedList: 'AA==' } });
+    const result = await checkCredentialStatus(makeStatusEntry({ statusListIndex: '0' }));
+    expect(result).toBe(true);
   });
 
   it('throws when statusListIndex is out of range for the encoded bitstring', async () => {

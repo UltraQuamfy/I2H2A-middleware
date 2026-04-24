@@ -138,7 +138,11 @@ describe('integration (mocked resolver and status)', () => {
       _sd: disclosures.map(disclosureHash),
     };
 
-    const issuerJwt = signEs256Jwt({ alg: 'ES256', typ: 'JWT' }, issuerPayload, issuerKeys.privateKey);
+    const issuerJwt = signEs256Jwt(
+      { alg: 'ES256', typ: 'vc+sd-jwt' },
+      issuerPayload,
+      issuerKeys.privateKey
+    );
     const sdInput = `${issuerJwt}~${disclosures.join('~')}~`;
     const sdHash = opts?.badSdHash
       ? 'bad-hash'
@@ -152,7 +156,7 @@ describe('integration (mocked resolver and status)', () => {
     const kbSigner = opts?.signKbWithWrongKey
       ? crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey
       : holderKeys.privateKey;
-    const kbJwt = signEs256Jwt({ alg: 'ES256', typ: 'JWT' }, kbPayload, kbSigner);
+    const kbJwt = signEs256Jwt({ alg: 'ES256', typ: 'kb+jwt' }, kbPayload, kbSigner);
     return `${sdInput}${kbJwt}`;
   }
 
@@ -282,5 +286,23 @@ describe('integration (mocked resolver and status)', () => {
 
     expect(res.valid).toBe(false);
     expect(res.error).toBe('delegatedBy is required');
+  });
+
+  it('rejects unsupported statusPurpose when present', async () => {
+    const token = buildToken({
+      status: {
+        id: 'https://example.org/status/1#0',
+        type: 'BitstringStatusListEntry',
+        statusPurpose: 'suspension',
+        statusListIndex: 0,
+        statusListCredential: 'https://example.org/status/1',
+      },
+    });
+    const res = await verifyI2H2APresentation(token, {
+      serverId,
+      nonce,
+    });
+    expect(res.valid).toBe(false);
+    expect(res.error).toBe('credentialStatus.statusPurpose must be revocation when present');
   });
 });
