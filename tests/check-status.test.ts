@@ -11,7 +11,7 @@ function makeStatusEntry(statusOverride?: Partial<CredentialStatusEntry>): Crede
     id: 'https://example.com/status/1#0',
     type: 'BitstringStatusListEntry',
     statusListCredential: 'https://example.com/status/1',
-    statusListIndex: 0,
+    statusListIndex: '0',
     ...(statusOverride ?? {}),
   };
 }
@@ -33,7 +33,7 @@ describe('checkCredentialStatus', () => {
     // 0x00 -> "AA==", bit 0 is 0 => active
     mockFetchJson(true, 200, { credentialSubject: { encodedList: 'AA==' } });
 
-    const result = await checkCredentialStatus(makeStatusEntry({ statusListIndex: 0 }));
+    const result = await checkCredentialStatus(makeStatusEntry({ statusListIndex: '0' }));
 
     expect(result).toBe(true);
     expect(mockedFetch).toHaveBeenCalledWith('https://example.com/status/1', {
@@ -45,7 +45,7 @@ describe('checkCredentialStatus', () => {
     // 0x80 -> "gA==", bit 0 is 1 => revoked
     mockFetchJson(true, 200, { credentialSubject: { encodedList: 'gA==' } });
 
-    const result = await checkCredentialStatus(makeStatusEntry({ statusListIndex: 0 }));
+    const result = await checkCredentialStatus(makeStatusEntry({ statusListIndex: '0' }));
 
     expect(result).toBe(false);
   });
@@ -61,8 +61,8 @@ describe('checkCredentialStatus', () => {
     ['NaN', Number.NaN],
   ])('throws when numeric statusListIndex is invalid (%s)', async (_label, badIndex) => {
     await expect(
-      checkCredentialStatus(makeStatusEntry({ statusListIndex: badIndex as number }))
-    ).rejects.toThrow('credentialStatus.statusListIndex must be a finite non-negative integer');
+      checkCredentialStatus(makeStatusEntry({ statusListIndex: String(badIndex) }))
+    ).rejects.toThrow('Invalid statusListIndex');
   });
 
   it.each([
@@ -87,7 +87,7 @@ describe('checkCredentialStatus', () => {
     mockFetchJson(true, 200, { credentialSubject: { encodedList: 'AA==' } });
 
     await expect(
-      checkCredentialStatus(makeStatusEntry({ statusListIndex: 8 }))
+      checkCredentialStatus(makeStatusEntry({ statusListIndex: '8' }))
     ).rejects.toThrow('statusListIndex out of range for encoded status list');
   });
 

@@ -131,7 +131,7 @@ describe('integration (mocked resolver and status)', () => {
         ({
           id: 'https://example.org/status/1#0',
           type: 'BitstringStatusListEntry' as const,
-          statusListIndex: 0,
+          statusListIndex: '0',
           statusListCredential: 'https://example.org/status/1',
         } satisfies CredentialStatusEntry),
       _sd_alg: 'sha-256' as const,

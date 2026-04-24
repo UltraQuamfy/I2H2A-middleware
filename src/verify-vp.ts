@@ -33,6 +33,16 @@ export async function verifyI2H2APresentation(
   token: string,
   options: VerifyOptions
 ): Promise<VerificationResult> {
+  /*
+   * I2H2A VP Verification Order (per spec v0.2):
+   * 1. Parse SD-JWT and extract header/payload
+   * 2. Verify disclosures and reconstruct _sd claims
+   * 3. Verify sd_hash binding (aud + nonce included in KB-JWT payload)
+   * 4. Verify KB-JWT signature against cnf.jwk (P-256 / ES256)
+   * 5. Check credentialStatus via Bitstring Status List
+   * Note: steps 3-4 are combined in KB-JWT verification per RFC 9901 §4.3.
+   * The implementation order below reflects the actual RFC flow.
+   */
   if (typeof token !== 'string' || token.trim() === '') {
     return { valid: false, error: 'Presentation token is required' };
   }
@@ -44,7 +54,6 @@ export async function verifyI2H2APresentation(
   if (typeof options.nonce !== 'string' || options.nonce.trim() === '') {
     return { valid: false, error: 'Verifier nonce is required' };
   }
-
   let issuerJwt: string;
   let disclosures: string[];
   let kbJwt: string;

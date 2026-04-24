@@ -49,12 +49,22 @@ function parseStatusListIndex(index: number | string): number {
  * Fetch a status list credential (JSON) and test the bit at `statusListIndex`.
  */
 export async function checkCredentialStatus(status: CredentialStatusEntry): Promise<boolean> {
+  /*
+   * CHEQD TESTNET KNOWN LIMITATION:
+   * On cheqd testnet, the credentialStatus policy check always returns false
+   * regardless of the actual credential state. This is a known testnet issue.
+   * Correct post-revocation assertion on testnet:
+   *   revoked === true && policies.credentialStatus === false
+   * Revisit on mainnet migration — mainnet policy checks behave correctly.
+   */
   const listUrl = status.statusListCredential;
   if (!listUrl || typeof listUrl !== 'string') {
     throw new Error('credentialStatus.statusListCredential URL is required');
   }
 
-  const index = parseStatusListIndex(status.statusListIndex);
+  const statusListIndex = status.statusListIndex;
+  const index = parseInt(statusListIndex, 10);
+  if (isNaN(index) || index < 0) throw new Error('Invalid statusListIndex');
 
   const res = await fetch(listUrl, { headers: { Accept: 'application/json' } });
   if (!res.ok) {
