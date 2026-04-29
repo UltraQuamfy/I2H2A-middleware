@@ -34,7 +34,7 @@ export async function verifyI2H2APresentation(
   options: VerifyOptions
 ): Promise<VerificationResult> {
   /*
-   * I2H2A VP Verification Order (per spec v0.3):
+   * I2H2A VP Verification Order (per spec v0.2):
    * 1. Parse SD-JWT and extract header/payload
    * 2. Verify disclosures and reconstruct _sd claims
    * 3. Verify sd_hash binding (aud + nonce included in KB-JWT payload)
